@@ -1,3 +1,11 @@
+/**
+ * @author Andrew Read-McFarland, Meng Wang
+ * @email mwang106@ur.rochester.edu
+ * @create date 2024-02-22 15:24:34
+ * @modify date 2024-02-22 15:24:34
+ * @desc Assignment 1: Distributed Knapsack Problem, Parallel and Distributed Systems CSC458 SPRING 2024
+ */
+
 #include <iostream>
 #include <stdlib.h>
 #include <chrono>

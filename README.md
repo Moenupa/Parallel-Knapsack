@@ -1,5 +1,11 @@
 # Distributed KnapSack Problem
 
+ > @author Meng Wang  
+ > @email mwang106@ur.rochester.edu  
+ > @create date 2024-02-22 15:25:35  
+ > @modify date 2024-02-22 15:25:35  
+ > @desc Assignment 1: Distributed Knapsack Problem, Parallel and Distributed Systems CSC458 SPRING 2024
+
 Submission includes:
 
 - [x] Your parallel version of knapsack, see [./src/knapsack.cpp](./src/knapsack.cpp)

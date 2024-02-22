@@ -1,3 +1,11 @@
+"""
+@author Meng Wang
+@email mwang106@ur.rochester.edu
+@create date 2024-02-22 15:27:35
+@modify date 2024-02-22 15:27:35
+@desc driver code to run experiments and plot results
+"""
+
 import os
 import re
 import subprocess
