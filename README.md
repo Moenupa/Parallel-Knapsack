@@ -83,8 +83,7 @@ We can swap `cur_row` and `prev_row` to simulate rolling two consecutive rows in
 We can parallelize this algorithm by distributing non-overlapping tasks column-wise to threads. For all thread `t`, it only receives a set of tasks $S_t$ from $S=\{0, 1, \dots, c\}$ such that
 
 $$
-
-\cup_{t} S_t = S \\
+\cup_{t} S_t = S, \\
 S_t \cap S_{t'}=\empty, t\neq t' \\
 $$
 
@@ -123,7 +122,7 @@ input|best `n_threads`|speedup curve
 |:-:|:-:|:-:
 `0.txt`|1|![0](./res/0.txt.png)
 `1.txt`|1|![1](./res/1.txt.png)
-`2.txt`|9|![2](./res/2.txt.png)
+`2.txt`|15|![2](./res/2.txt.png)
 `3.txt`|5|![3](./res/3.txt.png)
 `4.txt`|10|![4](./res/4.txt.png)
 `5.txt`|9|![5](./res/5.txt.png)
