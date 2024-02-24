@@ -1,8 +1,8 @@
 /**
- * @author Andrew Read-McFarland, Meng Wang
+ * @author Meng Wang
  * @email mwang106@ur.rochester.edu
- * @create date 2024-02-22 15:24:34
- * @modify date 2024-02-22 15:24:34
+ * @create date 2024-02-22 15:24
+ * @modify date 2024-02-23 19:56
  * @desc Assignment 1: Distributed Knapsack Problem, Parallel and Distributed Systems CSC458 SPRING 2024
  */
 
@@ -70,37 +70,29 @@ int knapsack(int n, int curr, int c)
 	return opt[curr][c];
 }
 
-int knapsack_parallel(int n, int capacity, int num_threads)
+int knapsack_parallel(int n, int capacity, int n_threads)
 {
-	// distribute the work
-	int jobs = (capacity + 1) / num_threads;
+	barrier<> sync_point(n_threads);
 
-	vector<thread> threads;
-	threads.reserve(num_threads);
-
-	std::barrier sync_point(num_threads);
-
-	// solves range [l, r) for all n items, 
+	// solves range [l, r) for all n items,
 	// after each row is done, hit barrier to sync between threads
 	auto knapsack_worker = [&](int l, int r)
 	{
-		int *prev;
-		int *curr = opt[0];
+		int *curr = opt[1];
+		int *prev = opt[0];
 
 		// initialize the first row
 		for (int col = l; col < r; col++)
-		{
 			curr[col] = (col < weights[0]) ? 0 : values[0];
-		}
+
+		// wait first row filled
 		sync_point.arrive_and_wait();
 
 		// iterate through second-to-last rows
+		// and wait for the previous row to be filled before updating current row
 		for (int row = 1; row < n; row++)
 		{
-			// get the current and previous row
-			prev = curr;
-			curr = opt[row];
-
+			swap(curr, prev);
 			// iterate through in the capcity range
 			// update the current row
 			for (int col = l; col < r; col++)
@@ -109,33 +101,38 @@ int knapsack_parallel(int n, int capacity, int num_threads)
 				if (col < weights[row])
 					curr[col] = prev[col];
 
-				// give or take the item: curr[col] = max(prev[col], prev[col-w] + v)
+				// give or take the item, and max
 				else
-					curr[col] = max(prev[col], prev[col - weights[row]] + values[row]);
+					curr[col] = max(
+						prev[col],
+						prev[col - weights[row]] + values[row]);
 			}
 
 			// for debugging
-			// osyncstream(cout) << this_thread::get_id() << " iter=" << i << " [" << l << ", " << r << ")" << time << endl;
+			// osyncstream(cout) << this_thread::get_id() << " iter=" << row 
+			// << " [" << l << ", " << r << ")" << endl;
 			sync_point.arrive_and_wait();
 		}
 	};
 
-	int l = 0, r = jobs + (capacity + 1) % num_threads;
-	threads.emplace_back(knapsack_worker, l, r);
-	for (int t = 1; t < num_threads; t++)
+	// distribute the work to n_threads
+	int jobs = (capacity + 1) / n_threads;
+	int bound = jobs + (capacity + 1) % n_threads;
+
+	// create threads, assign work
+	// first thread takes all remainders
+	vector<thread> threads;
+	threads.reserve(n_threads); 
+	threads.emplace_back(knapsack_worker, 0, bound);
+	for (; bound <= capacity; bound += jobs)
 	{
-		l = r;
-		r = l + jobs;
-		threads.emplace_back(knapsack_worker, l, r);
+		threads.emplace_back(knapsack_worker, bound, bound + jobs);
 	}
 
-	// wait for all threads to finish
-	for (int t = 0; t < num_threads; t++)
-	{
-		threads[t].join();
-	}
+	for (auto &thread : threads)
+		thread.join();
 
-	return opt[n-1][capacity];
+	return opt[n & 1][capacity];
 }
 
 int main(int argc, char *argv[])
@@ -146,47 +143,47 @@ int main(int argc, char *argv[])
 	// parsing input argument: number of threads
 	// since serial version does not have it, there may be diff in time
 	// we do this explicitly before the clock starts
-	int num_threads = 0;
+	int n_threads = 0;
 	if (argc > 1)
 	{
-		num_threads = atoi(argv[1]);
+		n_threads = stoi(argv[1]);
 	}
-	cout << "Number of threads: " << num_threads << "." << endl;
+	cout << "Number of threads: " << n_threads << "." << endl;
 
 	// start the clock
 	auto start = high_resolution_clock::now();
 
 	int n; // number of items in the knapsack
-	cin >> n;
 	int c; // capacity of the sack
-	cin >> c;
+	cin >> n >> c;
 	weights = new int[n]; // array to store the weights of the items
 	values = new int[n];  // array to store the values of the items
 	for (int i = 0; i < n; i++)
 	{
-		cin >> weights[i];
-		cin >> values[i];
-	}
-
-	// initialize the array for dynamic programming
-	opt = new int *[n];
-	for (int i = 0; i < n; i++)
-	{
-		opt[i] = new int[c + 1];
-		// intialize to -1
-		for (int j = 0; j < c + 1; j++)
-		{
-			opt[i][j] = -1;
-		}
+		cin >> weights[i] >> values[i];
 	}
 
 	int highest;
-	if (num_threads > 0)
+	if (n_threads > 0)
 	{
-		highest = knapsack_parallel(n, c, num_threads);
+		opt = new int *[2]
+		{ new int[c + 1], new int[c + 1] };
+		n_threads = min(n_threads, c + 1);
+		highest = knapsack_parallel(n, c, n_threads);
 	}
 	else
 	{
+		// initialize the array for dynamic programming
+		opt = new int *[n];
+		for (int i = 0; i < n; i++)
+		{
+			opt[i] = new int[c + 1];
+			// intialize to -1
+			for (int j = 0; j < c + 1; j++)
+			{
+				opt[i][j] = -1;
+			}
+		}
 		highest = knapsack(n, 0, c);
 	}
 

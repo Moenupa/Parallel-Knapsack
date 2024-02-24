@@ -1,5 +1,5 @@
 CXX			:=	-c++
-CXXFLAGS	:=	-std=c++20
+CXXFLAGS	:=	-std=c++20 -Wall -Wextra -Werror -Wpedantic
 LDFLAGS		:=	
 BUILD		:=	./build
 OBJ_DIR		:=	$(BUILD)/objects
@@ -32,10 +32,10 @@ build:
 	@mkdir -p $(OBJ_DIR)
 
 debug: CXXFLAGS += -DDEBUG -g
-debug: all
+debug: clean all
 
 release: CXXFLAGS += -O2
-release: all
+release: clean all
 
 clean:
 	-@rm -rvf $(OBJ_DIR)/*

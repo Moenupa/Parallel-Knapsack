@@ -2,8 +2,8 @@
 
  > @author Meng Wang  
  > @email mwang106@ur.rochester.edu  
- > @create date 2024-02-22 15:25:35  
- > @modify date 2024-02-22 15:25:35  
+ > @create date 2024-02-22 15:25
+ > @modify date 2024-02-23 22:09
  > @desc Assignment 1: Distributed Knapsack Problem, Parallel and Distributed Systems CSC458 SPRING 2024
 
 Submission includes:
@@ -19,13 +19,7 @@ The zip file should be structured as follows:
 
 ```ini
 .
-|-- build/          # Compiled binaries after make
-|   |-- apps/
-|   |   `-- src/
-|   |       `-- knapsack
-|   `-- objects/
 |-- inputs/         # inputs for the knapsack problem
-|-- log/            # logs recording performance
 |-- res/            # results of the knapsack problem
 |   `-- *.png
 `-- src/            # dir for source code
@@ -37,7 +31,6 @@ to compile the code, run the following commands:
 ```bash
 $ make          # default compilation
 $ make release  # compile with -O2 optimization
-$ ln -s build/apps/src/
 ```
 
 Binaries will be located in `./build/apps/src/` directory. You may soft link it to `./bin/` directory for easier access. The program takes the first cmdline argument as `num_threads`. 
@@ -46,10 +39,10 @@ Binaries will be located in `./build/apps/src/` directory. You may soft link it 
 - `num_threads>=1`, run the parallel version with `num_threads` threads.
 
 ```bash
-# run eithor for the SERIAL version
+# run SERIAL version, two are equivalent.
 $ ./build/apps/src/knapsack < inputs/1.txt
 $ ./build/apps/src/knapsack 0 < inputs/1.txt
-# run with n_threads for the PARALLEL version
+# run PARALLEL version, with n_threads as arg
 $ ./build/apps/src/knapsack 1 < inputs/1.txt
 $ ./build/apps/src/knapsack 2 < inputs/1.txt
 ```
@@ -58,7 +51,7 @@ $ ./build/apps/src/knapsack 2 < inputs/1.txt
 
 ## Code Explanation
 
-Our DP algorithm constructs a DP table $n\cdot c$, where $n$ denotes number of items and $c$ denotes max capacity.
+The basic DP algorithm constructs a DP table $n\cdot (c+1)$, where $n$ denotes number of items and $c$ denotes max capacity. 
 
 $$
 \forall j \in [0,c],
@@ -80,15 +73,22 @@ i_1    | | | |b|.| |    # obviously b only dep on the two a's
 i_N-1  | | | | |.| |	# the same applys to all (prev, cur) row pairs
 ```
 
-Therefore `cur_row` dependents on the `prev_row` only. Individual columns within `cur_row` are independent. There are only reads on the `prev_row` and writes on `cur_row`, We can parallelize this algorithm by distribute the tasks column-wise to threads. For each threat `t`:
+Therefore `cur_row` dependents on the `prev_row` only, where there are:
+- only reads on the `prev_row`
+- only writes on `cur_row`
+- depedency `cur_row` -> `prev_row`, `next_row` -> `cur_row`
+
+We can swap `cur_row` and `prev_row` to simulate rolling two consecutive rows in the DP table in a **iterative** manner. This can optimize space to $O(c)$, i.e. two rows' space. We can only go to next row after the current row has been filled. 
+
+We can parallelize this algorithm by distributing non-overlapping tasks column-wise to threads. For all thread `t`, it only receives a set of tasks $S_t$ from $S=\{0, 1, \dots, c\}$ such that
 
 $$
-S_t = \text{allocate\_jobs}([0, c], t) \\
-\forall j \in S_t, 
-\text{DP}[i][j]=\text{worker}(\text{DP}[i-1], j)
+
+\cup_{t} S_t = S \\
+S_t \cap S_{t'}=\empty, t\neq t' \\
 $$
 
-We only increament `i` after the current row have been filled. A pseudocode is as follows:
+Pseudo-code is as follows:
 
 ```swift
 func knapsack_parallel(n: int, capacity: int, num_threads: int):
@@ -109,7 +109,7 @@ func knapsack_parallel(n: int, capacity: int, num_threads: int):
 			sync_point.arrive_and_wait()
 
 	// distribute tasks and wait for all threads to finish
-	distribute_tasks(threads[], knapsack_worker, l[], r[])
+	parition_tasks(threads[], knapsack_worker)
     join_threads()
 
 	return opt[n-1][capacity]
@@ -119,11 +119,11 @@ func knapsack_parallel(n: int, capacity: int, num_threads: int):
 
 ## Speedup VS Threads
 
-input|best n threads|speedup curve
+input|best `n_threads`|speedup curve
 |:-:|:-:|:-:
 `0.txt`|1|![0](./res/0.txt.png)
 `1.txt`|1|![1](./res/1.txt.png)
-`2.txt`|10|![2](./res/2.txt.png)
-`3.txt`|10|![3](./res/3.txt.png)
-`4.txt`|12|![4](./res/4.txt.png)
-`5.txt`|12|![5](./res/5.txt.png)
+`2.txt`|9|![2](./res/2.txt.png)
+`3.txt`|5|![3](./res/3.txt.png)
+`4.txt`|10|![4](./res/4.txt.png)
+`5.txt`|9|![5](./res/5.txt.png)
