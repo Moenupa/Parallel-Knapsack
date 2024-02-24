@@ -84,7 +84,7 @@ We can parallelize this algorithm by distributing non-overlapping tasks column-w
 
 $$
 \cup_{t} S_t = S, \\
-S_t \cap S_{t'}=\empty, t\neq t' \\
+S_t \cap S_{t'}=\emptyset, t\neq t' \\
 $$
 
 Pseudo-code is as follows:
