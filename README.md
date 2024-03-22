@@ -3,7 +3,7 @@
  > @author Meng Wang  
  > @email mwang106@ur.rochester.edu  
  > @create date 2024-02-22 15:25
- > @modify date 2024-02-23 22:09
+ > @modify date 2024-02-23 22:09  
  > @desc Assignment 1: Distributed Knapsack Problem, Parallel and Distributed Systems CSC458 SPRING 2024
 
 Submission includes:
