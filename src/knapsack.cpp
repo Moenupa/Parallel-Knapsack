@@ -14,6 +14,8 @@
 #include <syncstream>
 #include <thread>
 #include <vector>
+#include <algorithm>
+#include <omp.h>
 
 using namespace std;
 
@@ -70,6 +72,38 @@ int knapsack(int n, int curr, int c)
 	return opt[curr][c];
 }
 
+int knapsack_mp_parallel(int n, int capacity)
+{
+	int *curr = opt[1];
+	int *prev = opt[0];
+
+	#pragma omp parallel for
+	for (int col = 0; col <= capacity; col++)
+		curr[col] = (col < weights[0]) ? 0 : values[0];
+
+	for (int row = 0; row < n; row++)
+	{
+		swap(curr, prev);
+		// iterate through in the capacity range
+		// update the current row
+		#pragma omp parallel for
+		for (int col = 0; col <= capacity; col++)
+		{
+			// no enough space to take
+			if (col < weights[row])
+				curr[col] = prev[col];
+
+			// give or take the item, and max
+			else
+				curr[col] = max(
+					prev[col],
+					prev[col - weights[row]] + values[row]);
+		}
+	}
+
+	return opt[n & 1][capacity];
+}
+
 int knapsack_parallel(int n, int capacity, int n_threads)
 {
 	barrier<> sync_point(n_threads);
@@ -93,7 +127,7 @@ int knapsack_parallel(int n, int capacity, int n_threads)
 		for (int row = 1; row < n; row++)
 		{
 			swap(curr, prev);
-			// iterate through in the capcity range
+			// iterate through in the capacity range
 			// update the current row
 			for (int col = l; col < r; col++)
 			{
@@ -171,7 +205,7 @@ int main(int argc, char *argv[])
 		n_threads = min(n_threads, c + 1);
 		highest = knapsack_parallel(n, c, n_threads);
 	}
-	else
+	else if (n_threads == 0)
 	{
 		// initialize the array for dynamic programming
 		opt = new int *[n];
@@ -185,6 +219,10 @@ int main(int argc, char *argv[])
 			}
 		}
 		highest = knapsack(n, 0, c);
+	} else {
+		opt = new int *[2]
+		{ new int[c + 1], new int[c + 1] };
+		highest = knapsack_mp_parallel(n, c);
 	}
 
 	auto end = high_resolution_clock::now();

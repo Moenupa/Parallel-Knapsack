@@ -68,7 +68,7 @@ def plot(logger: str):
     MAX_THREAD = max(ARR_THREADS)
     
     data = pd.read_csv(logger, names=['input', 'threads', 'result', 'elapsed_time'])
-    data = data.groupby(['input', 'threads']).mean().reset_index()
+    data = data.groupby(['input', 'threads']).median().reset_index()
     with open('average.txt', 'w') as f:
         # data[data['threads'].isin({0, 1, 2, 4, 8, 16})].to_csv(f, index=False)
         data.to_csv(f, index=False)
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     os.makedirs('res', exist_ok=True)
     os.makedirs('log', exist_ok=True)
     
-    # plot("log/20240223_200352.csv"); exit(0)
+    plot("log/20240223_200352.csv"); exit(0)
 
     log_path = gen_log_timestamp()
     for input_file in INPUTS:

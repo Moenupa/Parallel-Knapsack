@@ -1,11 +1,11 @@
 CXX			:=	-c++
-CXXFLAGS	:=	-std=c++20 -Wall -Wextra -Werror -Wpedantic
-LDFLAGS		:=	
+CXXFLAGS	:=	-std=c++20 -Wall -Wextra -Werror -Wpedantic -fopenmp
+LDFLAGS		:=	-lstdc++ -lm -lpthread
 BUILD		:=	./build
 OBJ_DIR		:=	$(BUILD)/objects
 APP_DIR		:=	$(BUILD)/apps
 TARGET		:=	program
-INCLUDE		:=	
+INCLUDE		:=	-Iinclude -I/usr/include
 SRC			:=									\
 				$(wildcard	src/*.cpp)			\
 				$(wildcard	src/*/*.cpp)
